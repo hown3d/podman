@@ -713,11 +713,13 @@ func (c *Container) generateSpec(ctx context.Context) (*spec.Spec, error) {
 	// the user (already present in OCI spec). If we don't have a UTS ns,
 	// set it to the host's hostname instead.
 	hostname := c.Hostname()
+	logrus.Warnf("using hostname: %s", hostname)
 	foundUTS := false
 
 	for _, i := range c.config.Spec.Linux.Namespaces {
 		if i.Type == spec.UTSNamespace && i.Path == "" {
 			foundUTS = true
+			logrus.Warnf("found uts, setting hostname to : %s", hostname)
 			g.SetHostname(hostname)
 			break
 		}
@@ -732,11 +734,13 @@ func (c *Container) generateSpec(ctx context.Context) (*spec.Spec, error) {
 	needEnv := true
 	for _, checkEnv := range g.Config.Process.Env {
 		if strings.SplitN(checkEnv, "=", 2)[0] == "HOSTNAME" {
+			logrus.Warn("HOSTNAME env var already present")
 			needEnv = false
 			break
 		}
 	}
 	if needEnv {
+		logrus.Warnf("adding hostname %s to process env", hostname)
 		g.AddProcessEnv("HOSTNAME", hostname)
 	}
 
